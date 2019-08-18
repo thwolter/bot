@@ -5,7 +5,7 @@ namespace App\Jobs;
 use Spatie\WebhookClient\ProcessWebhookJob;
 use Illuminate\Support\Facades\Log;
 
-class QueuedTestJob extends ProcessWebhookJob
+class TestJob extends ProcessWebhookJob
 {
 
     /**

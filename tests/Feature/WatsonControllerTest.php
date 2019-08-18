@@ -18,7 +18,7 @@ class WatsonControllerTest extends TestCase
         $response = $this->withHeaders([
             'Signature' => env('WEBHOOK_CLIENT_SECRET')
         ])->json('POST', 'watson-webhook', [
-            'job' => 'test',
+            'job' => 'test1',
             'parameter' => 1
         ]);
 
@@ -32,13 +32,31 @@ class WatsonControllerTest extends TestCase
         $response = $this->withHeaders([
             'Signature' => env('WEBHOOK_CLIENT_SECRET')
         ])->json('POST', 'watson-webhook', [
-            'job' => 'queuedTest',
+            'job' => 'Test',
             'parameter' => 1
         ]);
 
         $response->assertStatus(200)
             ->assertJson([
                 'message' => 'ok'
+            ]);
+    }
+
+
+    public function testIsTimeSlotFree()
+    {
+        $response = $this->withHeaders([
+            'Signature' => env('WEBHOOK_CLIENT_SECRET')
+        ])->json('POST', 'watson-webhook', [
+            'job' => 'isTimeSlotFree',
+            'date' => '2019-08-15',
+            'startTime' => '15:00',
+            'minutes' => 60
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'message' => true
             ]);
     }
 }

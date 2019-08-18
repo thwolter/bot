@@ -4,37 +4,26 @@
 namespace App\Http\Controllers;
 
 
+use App\Http\Requests\WebhookRequest;
 use App\Http\Webhooks\WatsonSignatureValidator;
 use App\Http\Webhooks\WatsonWebhookProfile;
-use App\Repository\WatsonRepository;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Str;
 use Spatie\WebhookClient\WebhookConfig;
+use Spatie\WebhookClient\WebhookProcessor;
 
 class WatsonController
 {
 
-    private $repo;
 
-
-    public function __construct(WatsonRepository $repo)
+    public function __invoke(WebhookRequest $request)
     {
-        $this->repo = $repo;
-    }
+        $method = $this->method($request);
 
+        if ( $this->isRepo($method) )
+            return response()->json((new $method($request))->handle());
 
-    public function __invoke(Request $request)
-    {
-
-        $job = $request->get('job');
-
-        if (method_exists(WatsonRepository::class, $job))
-            return response()->json($this->repo->$job($request->except('job')));
-
-        $queuedJob = 'App\Jobs\\' . ucfirst($job) . 'Job';
-        if (class_exists($queuedJob))
-            return response()->json($this->queuedJob($queuedJob, $request));
-
-        abort(303, 'Job not defined.');
+        return response()->json($this->queuedJob($method, $request));
     }
 
 
@@ -51,8 +40,34 @@ class WatsonController
             'process_webhook_job' => $job,
         ]);
 
-        (new \Spatie\WebhookClient\WebhookProcessor($request, $webhookConfig))->process();
+        (new WebhookProcessor($request, $webhookConfig))->process();
 
         return ['message' => 'ok'];
+    }
+
+
+    /**
+     * Returns the method defined for the job.
+     *
+     * @param $request
+     * @return mixed
+     */
+    private function method($request)
+    {
+        $job = ucfirst(Str::camel($request->get('job')));
+
+        return Config::get('webhook.jobs.' . $job);
+    }
+
+
+    /**
+     * Check if the method is defined as repository for immediate feedback.
+     *
+     * @param $method
+     * @return bool
+     */
+    private function isRepo($method)
+    {
+        return substr($method, 4, 10) == 'Repository';
     }
 }

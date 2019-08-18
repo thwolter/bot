@@ -1,45 +1,43 @@
 <?php
 
-
 namespace App\Repository;
 
 
-use Carbon\Carbon;
+use App\Http\Requests\WebhookRequest;
+use App\Repository\Watson\IsTimeSlotFree;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Validator;
-use Spatie\GoogleCalendar\Event;
 
 class WatsonRepository
 {
-    public function test(array $parameters)
-    {
-        $validator = Validator::make($parameters, [
-            'parameter' => 'required'
-        ])->validate();
 
-        return ['message' => $parameters['parameter']];
+    private $parameters;
+
+
+    public function __construct(WebhookRequest $request)
+    {
+        $this->parameters = $this->validate($request);
     }
 
 
-    public function proposeTimeSlot($hours)
+    public function rules()
     {
-       //
+        return [
+            //
+        ];
     }
 
 
-    public function isTimeSlotFree(array $parameters)
+    protected function validate($request)
     {
-        $validator = Validator::make($parameters, [
-            'date' => 'required',
-            'startTime' => 'required',
-            'minutes' => 'required|int'
-        ])->validate();
+        if ($this->rules() == [])
+            return $request->all();
 
-        $startDateTime = Carbon::create($parameters['date'] . $parameters['startTime']);
-        $endtDateTime = $startDateTime->addMinutes($parameters['minutes']);
-
-        $nextEvent = Event::get($startDateTime)->first();
-
-        return $nextEvent->startDateTime > $endtDateTime;
+        return Validator::make($request->all(), $this->rules())->validate();
     }
 
+    public function __get($name)
+    {
+        return Arr::get($this->parameters, $name);
+    }
 }
