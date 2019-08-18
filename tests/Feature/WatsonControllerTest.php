@@ -59,4 +59,5 @@ class WatsonControllerTest extends TestCase
                 'message' => true
             ]);
     }
+
 }
